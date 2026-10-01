@@ -197,6 +197,8 @@ public:
 
     const Map& getMap() const;
 
+    AgentObservation getAgent1Observation() const;
+
 private:
 
     IAgent* agentController1_ = nullptr;

@@ -13,6 +13,10 @@ public:
 
     void processEvents() override;
 
+    void renderAgentView(
+        const AgentObservation& observation
+    );
+
     void render(
         const GameState& state,
         const Map& map
@@ -20,4 +24,9 @@ public:
 
 private:
     sf::RenderWindow window;
+    sf::RenderWindow agentViewWindow;
 };
+
+void renderAgentView(
+    const AgentObservation& observation
+);

@@ -30,6 +30,10 @@ int main()
             gameEngine.getState(),
             gameEngine.getMap()
         );
+
+        renderer.renderAgentView(
+            gameEngine.getAgent1Observation()
+        );
     }
 
     return 0;

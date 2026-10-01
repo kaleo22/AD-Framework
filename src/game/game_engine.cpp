@@ -577,3 +577,8 @@ void GameEngine::checkGameFinished()
 void GameEngine::shutdown()
 {
 }
+
+AgentObservation GameEngine::getAgent1Observation() const
+{
+    return buildObservation(agent1_);
+}
