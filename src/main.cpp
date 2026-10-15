@@ -1,14 +1,31 @@
 #include "game/game_engine.h"
-#include "agent/console_agent.h"
-#include "agent/wait_agent.h"
+#include "agent/dll_agent_adapter.h"
 #include "renderer/sfml_renderer.h"
 
 int main()
 {
     GameEngine gameEngine;
 
-    ConsoleAgent player1;
-    WaitAgent player2;
+    DllAgentAdapter player1;
+    DllAgentAdapter player2;
+
+    if (!player1.load(
+            "simple_agent.dll",
+            Map::width_,
+            Map::height_
+        ))
+    {
+        return 1;
+    }
+
+    if (!player2.load(
+            "simple_agent.dll",
+            Map::width_,
+            Map::height_
+        ))
+    {
+        return 1;
+    }
 
     gameEngine.setAgents(
         &player1,

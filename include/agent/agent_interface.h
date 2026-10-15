@@ -11,4 +11,9 @@ public:
     virtual AgentAction getAction(
         const AgentObservation& observation
     ) = 0;
+
+    virtual void onActionExecuted(AgentAction action)
+    {
+        (void)action;
+    }
 };

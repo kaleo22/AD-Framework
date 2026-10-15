@@ -6,12 +6,12 @@
 #include "game/game_state.h"
 
 
-class AgentInstance
+class GameAgent
 {
 public:
-    AgentInstance() = default;
+    GameAgent() = default;
 
-    AgentInstance(
+    GameAgent(
         uint32_t id,
         Position position)
         : id_(id),
@@ -123,6 +123,22 @@ public:
         return vision_;
     }
 
+    void setApiCell(uint32_t index, uint32_t value)
+    {
+        if (index >= VISIBLE_CELL_COUNT)
+            return;
+
+        const uint32_t y = index / VISION_SIZE;
+        const uint32_t x = index % VISION_SIZE;
+
+        apiSnapshot_.cells[y][x] = value;
+    }
+
+    const WorldSnapshot& getApiSnapshot() const
+    {
+        return apiSnapshot_;
+    }
+
 
     bool isCarryingFlag() const
     {
@@ -150,4 +166,5 @@ private:
 
     bool carryingFlag_ = false;
     uint32_t round_ = 0;
+    WorldSnapshot apiSnapshot_{};
 };

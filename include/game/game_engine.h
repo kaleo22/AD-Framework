@@ -217,22 +217,22 @@ private:
 
     void shutdown();
 
-    void executeAction(
-        AgentInstance& agent,
+    AgentAction executeAction(
+        GameAgent& agent,
         AgentAction action
     );
 
     bool tryMove(
-        AgentInstance& agent,
+        GameAgent& agent,
         Position target
     );
 
     bool tryTakeFlag(
-        AgentInstance& agent
+        GameAgent& agent
     );
 
     bool tryDropFlag(
-        AgentInstance& agent
+        GameAgent& agent
     );
 
     bool isOccupied(
@@ -240,7 +240,7 @@ private:
     ) const;
 
     AgentObservation buildObservation(
-        const AgentInstance& agent
+        const GameAgent& agent
     ) const;
 
     void syncGameState();
@@ -250,12 +250,12 @@ private:
 
     PluginManager pluginManager_;
 
-    AgentInstance agent1_{
+    GameAgent agent1_{
         1,
         Position{2, 2}
     };
 
-    AgentInstance agent2_{
+    GameAgent agent2_{
         2,
         Position{13, 7}
     };

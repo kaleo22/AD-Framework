@@ -1,6 +1,8 @@
 #pragma once
 
 #include <vector>
+#include <cstdint>
+#include "agent/agent_api.h"
 
 struct Position
 {
@@ -56,6 +58,46 @@ inline Position getMoveDelta(AgentAction action)
 
         default:
             return {0, 0};
+    }
+}
+
+inline AgentAction fromAPIAction(uint32_t apiAction) {
+    switch (apiAction) {
+        case ACTION_WAIT:
+            return AgentAction::Wait;
+
+        case ACTION_MOVE_NORTH:
+            return AgentAction::MoveUp;
+
+        case ACTION_MOVE_SOUTH:
+            return AgentAction::MoveDown;
+
+        case ACTION_MOVE_WEST:
+            return AgentAction::MoveLeft;
+
+        case ACTION_MOVE_EAST:
+            return AgentAction::MoveRight;
+
+        case ACTION_MOVE_NORTHWEST:
+            return AgentAction::MoveUpLeft;
+
+        case ACTION_MOVE_NORTHEAST:
+            return AgentAction::MoveUpRight;
+
+        case ACTION_MOVE_SOUTHWEST:
+            return AgentAction::MoveDownLeft;
+
+        case ACTION_MOVE_SOUTHEAST:
+            return AgentAction::MoveDownRight;
+
+        case ACTION_PICK_UP_FLAG:
+            return AgentAction::TakeFlag;
+
+        case ACTION_PUT_DOWN_FLAG:
+            return AgentAction::DropFlag;
+
+        default:
+            return AgentAction::Wait;
     }
 }
 

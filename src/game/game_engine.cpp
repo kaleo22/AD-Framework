@@ -8,8 +8,8 @@ GameEngine::GameEngine()
 }
 
 
-void GameEngine::executeAction(
-    AgentInstance& agent,
+AgentAction GameEngine::executeAction(
+    GameAgent& agent,
     AgentAction action)
 {
     switch (action)
@@ -34,27 +34,32 @@ void GameEngine::executeAction(
                 current.y + delta.y
             };
 
-            tryMove(agent, target);
-
-            break;
+            return tryMove(agent, target)
+                ? action
+                : AgentAction::Wait;
         }
 
         case AgentAction::TakeFlag:
-            tryTakeFlag(agent);
-            break;
+            return tryTakeFlag(agent)
+                ? action
+                : AgentAction::Wait;
 
         case AgentAction::DropFlag:
-            tryDropFlag(agent);
-            break;
+            return tryDropFlag(agent)
+                ? action
+                : AgentAction::Wait;
 
         case AgentAction::Wait:
-            break;
+        default:
+            return AgentAction::Wait;
     }
+
+    return AgentAction::Wait;
 }
 
 
 bool GameEngine::tryMove(
-    AgentInstance& agent,
+    GameAgent& agent,
     Position target)
 {
     if (target.x < 0 || target.y < 0)
@@ -90,7 +95,7 @@ bool GameEngine::tryMove(
 
 
 bool GameEngine::tryTakeFlag(
-    AgentInstance& agent)
+    GameAgent& agent)
 {
     if (agent.isCarryingFlag())
         return false;
@@ -126,7 +131,7 @@ bool GameEngine::tryTakeFlag(
 
 
 bool GameEngine::tryDropFlag(
-    AgentInstance& agent)
+    GameAgent& agent)
 {
     if (!agent.isCarryingFlag())
         return false;
@@ -203,7 +208,7 @@ bool GameEngine::isOccupied(
 
 
 AgentObservation GameEngine::buildObservation(
-    const AgentInstance& agent) const
+    const GameAgent& agent) const
 {
     AgentObservation observation;
 
@@ -287,6 +292,45 @@ AgentObservation GameEngine::buildObservation(
                 index,
                 visibleCell.encode()
             );
+
+            uint32_t apiCell = CELLTYPE_UNKNOWN;
+
+            switch (visibleCell.getTerrain())
+            {
+                case Cell::Terrain::Empty:
+                case Cell::Terrain::Start:
+                    apiCell |= CELLTYPE_FLOOR;
+                    break;
+
+                case Cell::Terrain::Wall:
+                    apiCell |= CELLTYPE_WALL;
+                    break;
+
+                case Cell::Terrain::Goal:
+                    apiCell |= CELLTYPE_TARGET;
+                    break;
+            }
+
+            const Position ownPosition = agent.getPosition();
+
+            const GameAgent& enemy =
+                agent.getId() == agent1_.getId()
+                    ? agent2_
+                    : agent1_;
+
+            const Position enemyPosition = enemy.getPosition();
+
+            if (x == ownPosition.x && y == ownPosition.y)
+            {
+                apiCell |= CELLCONTENT_SELF;
+            }
+
+            if (x == enemyPosition.x && y == enemyPosition.y)
+            {
+                apiCell |= CELLCONTENT_ENEMY;
+            }
+
+            observation.setApiCell(index, apiCell);
 
             ++index;
         }
@@ -535,10 +579,13 @@ void GameEngine::updateRunning()
             observation1
         );
 
-    executeAction(
-        agent1_,
-        action1
-    );
+    const AgentAction executed1 =
+        executeAction(
+            agent1_,
+            action1
+        );
+
+    agentController1_->onActionExecuted(executed1);
 
 
     AgentObservation observation2 =
@@ -549,10 +596,12 @@ void GameEngine::updateRunning()
             observation2
         );
 
-    executeAction(
-        agent2_,
-        action2
-    );
+    const AgentAction executed2 =
+        executeAction(
+            agent2_,
+            action2
+        );
+    agentController2_->onActionExecuted(executed2);
 
 
     ++currentRound_;

@@ -21,7 +21,7 @@ g++ ^
 if errorlevel 1 goto :error
 
 
-echo Building plugin_counter.dll...
+echo Building simple_agent.dll...
 
 g++ ^
     -I"%INCLUDE%\plugins" ^
@@ -40,7 +40,8 @@ g++ ^
     "%SRC%\framework\plugin_manager.cpp" ^
     "%SRC%\game\game_engine.cpp" ^
     "%SRC%\renderer\sfml_renderer.cpp" ^
-    "%SRC%\agent\console_agent.cpp" ^
+    "%SRC%\agent\dll_agent_adapter.cpp" ^
+    "%SRC%\framework\agent_loader.cpp" ^
     -o "%BUILD%\AD_Framework.exe" ^
     -lboost_filesystem-mt ^
     -lsfml-graphics ^
