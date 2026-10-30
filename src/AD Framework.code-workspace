@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"name": "AD Framework",
+			"path": ".."
+		},
+		{
+			"name": "AgentHostTest",
+			"path": "../../../Downloads/AgentHostTest"
+		}
+	],
+	"settings": {}
+}
