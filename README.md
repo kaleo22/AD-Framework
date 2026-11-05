@@ -9,6 +9,24 @@
 
 This document records weekly development activities, technical decisions, problems, and upcoming tasks.
 
+
+## Week 45 (02.11. – 06.11.2026)
+
+### Activities
+
+- Reworked the map and 5×5 agent observation to use packed 5-bit cell codes.
+- Updated flag handling, both renderer views, and the DLL snapshot conversion.
+
+### Decisions
+
+- Use 22 explicit cell states and reserve the remaining ten codes.
+- Store flag ownership by team internally and translate it to own/enemy when building the DLL snapshot.
+
+### Open Issues / Next Steps
+
+- Resolve the failed Windows build, then verify both renderer views and DLL integration.
+- Agree on how to distinguish carried flags from flags on the ground in the DLL snapshot.
+
 ---
 
 ## Week 44 (26.10. – 30.10.2026)

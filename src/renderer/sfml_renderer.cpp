@@ -1,5 +1,66 @@
 #include "renderer/sfml_renderer.h"
 
+namespace
+{
+const sf::Color player1Color{70, 140, 255};
+const sf::Color player2Color{230, 80, 90};
+
+sf::Color tileColor(CellState surface)
+{
+    switch (surface)
+    {
+        case CellState::Ground: return sf::Color(45, 50, 60);
+        case CellState::Wall: return sf::Color(100, 105, 115);
+        case CellState::Base: return sf::Color(55, 100, 75);
+        default: return sf::Color(20, 23, 29);
+    }
+}
+
+sf::Color flagColor(FlagId flag)
+{
+    return flag == FlagId::Team1 ? sf::Color(135, 225, 255) : sf::Color(255, 180, 100);
+}
+
+void drawMarker(sf::RenderTarget& target, sf::Vector2f center, float radius, sf::Color color)
+{
+    sf::CircleShape marker(radius);
+    marker.setOrigin({radius, radius});
+    marker.setPosition(center);
+    marker.setFillColor(color);
+    target.draw(marker);
+}
+
+void drawCell(
+    sf::RenderTarget& target,
+    sf::Vector2f origin,
+    float tileSize,
+    CellState state,
+    sf::Color agentColor
+)
+{
+    const CellInfo& cell = describeCell(state);
+    sf::RectangleShape tile({tileSize - 2.0f, tileSize - 2.0f});
+    tile.setPosition(origin);
+    tile.setFillColor(tileColor(cell.surface));
+    target.draw(tile);
+
+    const sf::Vector2f center = origin + sf::Vector2f(tileSize * 0.5f, tileSize * 0.5f);
+    if (cell.occupied)
+        drawMarker(target, center, tileSize * 0.30f, agentColor);
+
+    if (cell.groundFlag != FlagId::None)
+    {
+        const sf::Vector2f groundMarker = cell.occupied
+            ? origin + sf::Vector2f(tileSize * 0.18f, tileSize * 0.80f)
+            : center;
+        drawMarker(target, groundMarker, tileSize * 0.10f, flagColor(cell.groundFlag));
+    }
+
+    if (cell.carriedFlag != FlagId::None)
+        drawMarker(target, center, tileSize * 0.10f, flagColor(cell.carriedFlag));
+}
+}
+
 bool SFMLRenderer::initialize()
 {
     window.create(
@@ -41,299 +102,68 @@ void SFMLRenderer::processEvents()
     }
 }
 
-void SFMLRenderer::render(
-    const GameState& state,
-    const Map& map)
+void SFMLRenderer::render(const GameState& state, const Map& map)
 {
     window.clear(sf::Color(25, 28, 35));
 
     const float tileSize = 60.0f;
-
-    const float boardWidth =
-        state.width * tileSize;
-
-    const float boardHeight =
-        state.height * tileSize;
-
-    const float startX =
-        (1280.0f - boardWidth) / 2.0f;
-
-    const float startY =
-        (800.0f - boardHeight) / 2.0f;
+    const float boardWidth = state.width * tileSize;
+    const float boardHeight = state.height * tileSize;
+    const float startX = (1280.0f - boardWidth) / 2.0f;
+    const float startY = (800.0f - boardHeight) / 2.0f;
 
     for (int y = 0; y < state.height; ++y)
     {
         for (int x = 0; x < state.width; ++x)
         {
-            const Cell cell = map.getCell(x, y);
+            const Position position{x, y};
+            CellState cell = map.getCell(x, y);
+            sf::Color agentColor = player1Color;
 
-            sf::RectangleShape tile(
-                {
-                    tileSize - 2.0f,
-                    tileSize - 2.0f
-                }
-            );
-
-            tile.setPosition(
-                {
-                    startX + x * tileSize,
-                    startY + y * tileSize
-                }
-            );
-
-            switch (cell.getTerrain())
+            if (position == state.player1)
+                cell = withAgent(cell, state.player1CarriedFlag);
+            else if (position == state.player2)
             {
-                case Cell::Terrain::Empty:
-                {
-                    tile.setFillColor(
-                        sf::Color(45, 50, 60)
-                    );
-                    break;
-                }
-
-                case Cell::Terrain::Wall:
-                {
-                    tile.setFillColor(
-                        sf::Color(100, 105, 115)
-                    );
-                    break;
-                }
-
-                case Cell::Terrain::Start:
-                {
-                    tile.setFillColor(
-                        sf::Color(55, 100, 75)
-                    );
-                    break;
-                }
-
-                case Cell::Terrain::Goal:
-                {
-                    tile.setFillColor(
-                        sf::Color(130, 110, 50)
-                    );
-                    break;
-                }
+                cell = withAgent(cell, state.player2CarriedFlag);
+                agentColor = player2Color;
             }
 
-            window.draw(tile);
-
-            if (cell.getContent() == Cell::Content::Flag)
-            {
-                sf::CircleShape flag(
-                    tileSize * 0.15f
-                );
-
-                flag.setFillColor(
-                    sf::Color(240, 200, 50)
-                );
-
-                flag.setPosition(
-                    {
-                        startX
-                            + x * tileSize
-                            + tileSize * 0.35f,
-
-                        startY
-                            + y * tileSize
-                            + tileSize * 0.35f
-                    }
-                );
-
-                window.draw(flag);
-            }
+            drawCell(window, {startX + x * tileSize, startY + y * tileSize}, tileSize, cell, agentColor);
         }
     }
-
-    sf::CircleShape player1(
-        tileSize * 0.30f
-    );
-
-    player1.setFillColor(
-        sf::Color(70, 140, 255)
-    );
-
-    player1.setPosition(
-        {
-            startX
-                + state.player1.x * tileSize
-                + tileSize * 0.2f,
-
-            startY
-                + state.player1.y * tileSize
-                + tileSize * 0.2f
-        }
-    );
-
-    window.draw(player1);
-
-    sf::CircleShape player2(
-        tileSize * 0.30f
-    );
-
-    player2.setFillColor(
-        sf::Color(230, 80, 90)
-    );
-
-    player2.setPosition(
-        {
-            startX
-                + state.player2.x * tileSize
-                + tileSize * 0.2f,
-
-            startY
-                + state.player2.y * tileSize
-                + tileSize * 0.2f
-        }
-    );
-
-    window.draw(player2);
 
     window.display();
 }
 
-void SFMLRenderer::renderAgentView(
-    const AgentObservation& observation)
+void SFMLRenderer::renderAgentView(const AgentObservation& observation)
 {
     if (!agentViewWindow.isOpen())
         return;
 
-    agentViewWindow.clear(
-        sf::Color(25, 28, 35)
-    );
+    agentViewWindow.clear(sf::Color(25, 28, 35));
 
     const float tileSize = 90.0f;
+    const float boardSize = AgentObservation::VISION_SIZE * tileSize;
+    const sf::Vector2u windowSize = agentViewWindow.getSize();
+    const float startX = (static_cast<float>(windowSize.x) - boardSize) / 2.0f;
+    const float startY = (static_cast<float>(windowSize.y) - boardSize) / 2.0f;
+    const bool isPlayer1 = observation.getOwnFlag() == FlagId::Team1;
+    const sf::Color selfColor = isPlayer1 ? player1Color : player2Color;
+    const sf::Color enemyColor = isPlayer1 ? player2Color : player1Color;
 
-    const float boardSize =
-        AgentObservation::VISION_SIZE * tileSize;
-
-    const sf::Vector2u windowSize =
-        agentViewWindow.getSize();
-
-    const float startX =
-        (static_cast<float>(windowSize.x) - boardSize) / 2.0f;
-
-    const float startY =
-        (static_cast<float>(windowSize.y) - boardSize) / 2.0f;
-
-    for (
-        uint32_t index = 0;
-        index < AgentObservation::VISIBLE_CELL_COUNT;
-        ++index
-    )
+    for (uint32_t index = 0; index < AgentObservation::VISIBLE_CELL_COUNT; ++index)
     {
-        const uint32_t x =
-            index % AgentObservation::VISION_SIZE;
+        const uint32_t x = index % AgentObservation::VISION_SIZE;
+        const uint32_t y = index / AgentObservation::VISION_SIZE;
+        const bool isSelf = index == AgentObservation::CENTER_INDEX;
 
-        const uint32_t y =
-            index / AgentObservation::VISION_SIZE;
-
-        const uint8_t encoded =
-            observation.getVisibleCell(index);
-
-        const Cell cell =
-            Cell::decode(encoded);
-
-        sf::RectangleShape tile(
-            {
-                tileSize - 2.0f,
-                tileSize - 2.0f
-            }
+        drawCell(
+            agentViewWindow,
+            {startX + x * tileSize, startY + y * tileSize},
+            tileSize,
+            observation.getVisibleCell(index),
+            isSelf ? selfColor : enemyColor
         );
-
-        tile.setPosition(
-            {
-                startX + x * tileSize,
-                startY + y * tileSize
-            }
-        );
-
-        switch (cell.getTerrain())
-        {
-            case Cell::Terrain::Empty:
-                tile.setFillColor(
-                    sf::Color(45, 50, 60)
-                );
-                break;
-
-            case Cell::Terrain::Wall:
-                tile.setFillColor(
-                    sf::Color(100, 105, 115)
-                );
-                break;
-
-            case Cell::Terrain::Start:
-                tile.setFillColor(
-                    sf::Color(55, 100, 75)
-                );
-                break;
-
-            case Cell::Terrain::Goal:
-                tile.setFillColor(
-                    sf::Color(130, 110, 50)
-                );
-                break;
-        }
-
-        agentViewWindow.draw(tile);
-
-        if (
-            cell.getContent()
-            == Cell::Content::Flag
-        )
-        {
-            sf::CircleShape flag(
-                tileSize * 0.15f
-            );
-
-            flag.setFillColor(
-                sf::Color(240, 200, 50)
-            );
-
-            flag.setPosition(
-                {
-                    startX
-                        + x * tileSize
-                        + tileSize * 0.35f,
-
-                    startY
-                        + y * tileSize
-                        + tileSize * 0.35f
-                }
-            );
-
-            agentViewWindow.draw(flag);
-        }
-
-        if (
-            cell.getContent()
-                == Cell::Content::Agent ||
-            cell.getContent()
-                == Cell::Content::AgentWithFlag
-        )
-        {
-            sf::CircleShape agent(
-                tileSize * 0.30f
-            );
-
-            agent.setFillColor(
-                sf::Color(70, 140, 255)
-            );
-
-            agent.setPosition(
-                {
-                    startX
-                        + x * tileSize
-                        + tileSize * 0.2f,
-
-                    startY
-                        + y * tileSize
-                        + tileSize * 0.2f
-                }
-            );
-
-            agentViewWindow.draw(agent);
-        }
     }
 
     agentViewWindow.display();

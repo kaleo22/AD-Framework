@@ -1,5 +1,15 @@
 #include "game/game_engine.h"
-#include "game/agent_types.h"
+
+namespace
+{
+uint32_t flagToApi(FlagId flag, FlagId ownFlag)
+{
+    if (flag == FlagId::None)
+        return CELLCONTENT_NONE;
+
+    return flag == ownFlag ? CELLCONTENT_OWN_FLAG : CELLCONTENT_ENEMY_FLAG;
+}
+}
 
 
 GameEngine::GameEngine()
@@ -58,281 +68,117 @@ AgentAction GameEngine::executeAction(
 }
 
 
-bool GameEngine::tryMove(
-    GameAgent& agent,
-    Position target)
+bool GameEngine::tryMove(GameAgent& agent, Position target)
 {
-    if (target.x < 0 || target.y < 0)
-        return false;
-
-    if (
-        target.x >= static_cast<int>(Map::width_) ||
-        target.y >= static_cast<int>(Map::height_)
-    )
-        return false;
-
-    const Cell targetCell =
-        map_.getCell(
-            static_cast<uint32_t>(target.x),
-            static_cast<uint32_t>(target.y)
-        );
-
-    if (
-        targetCell.getTerrain()
-        == Cell::Terrain::Wall
-    )
-        return false;
-
-    if (isOccupied(target))
+    const CellState surface = describeCell(map_.getCell(target.x, target.y)).surface;
+    if (surface == CellState::Wall || surface == CellState::Unknown || isOccupied(target))
         return false;
 
     agent.setPosition(target);
-
     syncGameState();
-
     return true;
 }
 
 
-bool GameEngine::tryTakeFlag(
-    GameAgent& agent)
+bool GameEngine::tryTakeFlag(GameAgent& agent)
 {
     if (agent.isCarryingFlag())
         return false;
 
-    const Position position =
-        agent.getPosition();
-
-    const Cell cell =
-        map_.getCell(
-            static_cast<uint32_t>(position.x),
-            static_cast<uint32_t>(position.y)
-        );
-
-    if (
-        cell.getContent()
-        != Cell::Content::Flag
-    )
+    const Position position = agent.getPosition();
+    const CellInfo& cell = describeCell(map_.getCell(position.x, position.y));
+    if (cell.groundFlag == FlagId::None)
         return false;
 
-    map_.setCell(
-        static_cast<uint32_t>(position.x),
-        static_cast<uint32_t>(position.y),
-        Cell(
-            cell.getTerrain(),
-            Cell::Content::None
-        )
-    );
-
-    agent.setCarryingFlag(true);
-
+    map_.setCell(position.x, position.y, cell.surface);
+    agent.setCarriedFlag(cell.groundFlag);
     return true;
 }
 
 
-bool GameEngine::tryDropFlag(
-    GameAgent& agent)
+bool GameEngine::tryDropFlag(GameAgent& agent)
 {
     if (!agent.isCarryingFlag())
         return false;
 
-    const Position position =
-        agent.getPosition();
-
-    const Cell cell =
-        map_.getCell(
-            static_cast<uint32_t>(position.x),
-            static_cast<uint32_t>(position.y)
-        );
-
-    if (
-        cell.getContent()
-        != Cell::Content::None
-    )
+    const Position position = agent.getPosition();
+    const CellInfo& cell = describeCell(map_.getCell(position.x, position.y));
+    if (cell.groundFlag != FlagId::None)
         return false;
 
-    map_.setCell(
-        static_cast<uint32_t>(position.x),
-        static_cast<uint32_t>(position.y),
-        Cell(
-            cell.getTerrain(),
-            Cell::Content::Flag
-        )
-    );
+    const CellState dropped = makeCellState(cell.surface, agent.getCarriedFlag());
+    if (dropped == CellState::Unknown)
+        return false;
 
-    agent.setCarryingFlag(false);
-
+    map_.setCell(position.x, position.y, dropped);
+    agent.setCarriedFlag(FlagId::None);
     return true;
 }
 
 
-bool GameEngine::isOccupied(
-    Position position) const
+bool GameEngine::isOccupied(Position position) const
 {
-    const Position position1 =
-        agent1_.getPosition();
-
-    const Position position2 =
-        agent2_.getPosition();
-
-    if (
-        position1.x == position.x &&
-        position1.y == position.y
-    )
-        return true;
-
-    if (
-        position2.x == position.x &&
-        position2.y == position.y
-    )
-        return true;
-
-    return false;
+    return position == agent1_.getPosition() || position == agent2_.getPosition();
 }
 
 
-// void GameEngine::syncGameState()
-// {
-//     state.width =
-//         static_cast<int>(Map::width_);
-//
-//     state.height =
-//         static_cast<int>(Map::height_);
-//
-//     state.player1 =
-//         agent1_.getPosition();
-//
-//     state.player2 =
-//         agent2_.getPosition();
-// }
-
-
-AgentObservation GameEngine::buildObservation(
-    const GameAgent& agent) const
+AgentObservation GameEngine::buildObservation(const GameAgent& agent) const
 {
-    AgentObservation observation;
+    const bool isPlayer1 = agent.getId() == agent1_.getId();
+    const FlagId ownFlag = isPlayer1 ? FlagId::Team1 : FlagId::Team2;
+    const Position ownBase = isPlayer1 ? BASE_1 : BASE_2;
+    const Position enemyBase = isPlayer1 ? BASE_2 : BASE_1;
+    const GameAgent& enemy = isPlayer1 ? agent2_ : agent1_;
+    const Position agentPosition = agent.getPosition();
+    const Position enemyPosition = enemy.getPosition();
 
-    observation.setCarryingFlag(
-        agent.isCarryingFlag()
-    );
+    AgentObservation observation(ownFlag);
+    observation.setRound(currentRound_);
 
-    observation.setRound(
-        currentRound_
-    );
-
-    const Position agentPosition =
-        agent.getPosition();
-
-    constexpr int radius =
-        AgentObservation::VISION_RADIUS;
-
+    constexpr int radius = AgentObservation::VISION_RADIUS;
     uint32_t index = 0;
-
     for (int dy = -radius; dy <= radius; ++dy)
     {
-        for (int dx = -radius; dx <= radius; ++dx)
+        for (int dx = -radius; dx <= radius; ++dx, ++index)
         {
-            const int x =
-                agentPosition.x + dx;
+            const Position position{agentPosition.x + dx, agentPosition.y + dy};
+            CellState visibleCell = map_.getCell(position.x, position.y);
+            const bool isSelf = position == agentPosition;
 
-            const int y =
-                agentPosition.y + dy;
+            if (isSelf)
+                visibleCell = withAgent(visibleCell, agent.getCarriedFlag());
+            else if (position == enemyPosition)
+                visibleCell = withAgent(visibleCell, enemy.getCarriedFlag());
 
-            Cell visibleCell(
-                Cell::Terrain::Wall,
-                Cell::Content::None
-            );
+            observation.setVisibleCell(index, visibleCell);
 
-            if (
-                x >= 0 &&
-                y >= 0 &&
-                x < static_cast<int>(Map::width_) &&
-                y < static_cast<int>(Map::height_)
-            )
-            {
-                visibleCell =
-                    map_.getCell(
-                        static_cast<uint32_t>(x),
-                        static_cast<uint32_t>(y)
-                    );
-
-                const Position position1 =
-                    agent1_.getPosition();
-
-                const Position position2 =
-                    agent2_.getPosition();
-
-                if (
-                    position1.x == x &&
-                    position1.y == y
-                )
-                {
-                    visibleCell = Cell(
-                        visibleCell.getTerrain(),
-                        agent1_.isCarryingFlag()
-                            ? Cell::Content::AgentWithFlag
-                            : Cell::Content::Agent
-                    );
-                }
-                else if (
-                    position2.x == x &&
-                    position2.y == y
-                )
-                {
-                    visibleCell = Cell(
-                        visibleCell.getTerrain(),
-                        agent2_.isCarryingFlag()
-                            ? Cell::Content::AgentWithFlag
-                            : Cell::Content::Agent
-                    );
-                }
-            }
-
-            observation.setVisibleCell(
-                index,
-                visibleCell.encode()
-            );
-
+            const CellInfo& cell = describeCell(visibleCell);
             uint32_t apiCell = CELLTYPE_UNKNOWN;
-
-            switch (visibleCell.getTerrain())
+            switch (cell.surface)
             {
-                case Cell::Terrain::Empty:
-                case Cell::Terrain::Start:
-                    apiCell |= CELLTYPE_FLOOR;
+                case CellState::Ground:
+                    apiCell = CELLTYPE_FLOOR;
                     break;
-
-                case Cell::Terrain::Wall:
-                    apiCell |= CELLTYPE_WALL;
+                case CellState::Wall:
+                    apiCell = CELLTYPE_WALL;
                     break;
-
-                case Cell::Terrain::Goal:
-                    apiCell |= CELLTYPE_TARGET;
+                case CellState::Base:
+                    apiCell = CELLTYPE_TARGET;
+                    if (position == ownBase)
+                        apiCell |= CELLCONTENT_OWN_TARGET;
+                    else if (position == enemyBase)
+                        apiCell |= CELLCONTENT_ENEMY_TARGET;
+                    break;
+                default:
                     break;
             }
 
-            const Position ownPosition = agent.getPosition();
+            if (cell.occupied)
+                apiCell |= isSelf ? CELLCONTENT_SELF : CELLCONTENT_ENEMY;
 
-            const GameAgent& enemy =
-                agent.getId() == agent1_.getId()
-                    ? agent2_
-                    : agent1_;
-
-            const Position enemyPosition = enemy.getPosition();
-
-            if (x == ownPosition.x && y == ownPosition.y)
-            {
-                apiCell |= CELLCONTENT_SELF;
-            }
-
-            if (x == enemyPosition.x && y == enemyPosition.y)
-            {
-                apiCell |= CELLCONTENT_ENEMY;
-            }
-
+            apiCell |= flagToApi(cell.groundFlag, ownFlag);
+            apiCell |= flagToApi(cell.carriedFlag, ownFlag);
             observation.setApiCell(index, apiCell);
-
-            ++index;
         }
     }
 
@@ -420,128 +266,37 @@ void GameEngine::syncGameState()
 
     state.player2 =
         agent2_.getPosition();
+
+    state.player1CarriedFlag = agent1_.getCarriedFlag();
+    state.player2CarriedFlag = agent2_.getCarriedFlag();
 }
 
 void GameEngine::initializeTestMap()
 {
     map_.clear();
+    constexpr int width = static_cast<int>(Map::width_);
+    constexpr int height = static_cast<int>(Map::height_);
 
-    for (uint32_t x = 0; x < Map::width_; ++x)
+    for (int x = 0; x < width; ++x)
     {
-        map_.setCell(
-            x,
-            0,
-            Cell(
-                Cell::Terrain::Wall,
-                Cell::Content::None
-            )
-        );
-
-        map_.setCell(
-            x,
-            Map::height_ - 1,
-            Cell(
-                Cell::Terrain::Wall,
-                Cell::Content::None
-            )
-        );
+        map_.setCell(x, 0, CellState::Wall);
+        map_.setCell(x, height - 1, CellState::Wall);
     }
 
-    for (uint32_t y = 0; y < Map::height_; ++y)
+    for (int y = 0; y < height; ++y)
     {
-        map_.setCell(
-            0,
-            y,
-            Cell(
-                Cell::Terrain::Wall,
-                Cell::Content::None
-            )
-        );
-
-        map_.setCell(
-            Map::width_ - 1,
-            y,
-            Cell(
-                Cell::Terrain::Wall,
-                Cell::Content::None
-            )
-        );
+        map_.setCell(0, y, CellState::Wall);
+        map_.setCell(width - 1, y, CellState::Wall);
     }
 
-    map_.setCell(
-        2,
-        2,
-        Cell(
-            Cell::Terrain::Start,
-            Cell::Content::None
-        )
-    );
+    constexpr Position innerWalls[]{
+        {5, 4}, {6, 4}, {7, 4}, {7, 5}, {5, 6}, {6, 6}, {7, 6}
+    };
+    for (const Position wall : innerWalls)
+        map_.setCell(wall.x, wall.y, CellState::Wall);
 
-    map_.setCell(
-        13,
-        7,
-        Cell(
-            Cell::Terrain::Start,
-            Cell::Content::None
-        )
-    );
-
-    map_.setCell(
-        5,
-        4,
-        Cell(Cell::Terrain::Wall, Cell::Content::None)
-    );
-
-    map_.setCell(
-        6,
-        4,
-        Cell(Cell::Terrain::Wall, Cell::Content::None)
-    );
-
-    map_.setCell(
-        7,
-        4,
-        Cell(Cell::Terrain::Wall, Cell::Content::None)
-    );
-
-    map_.setCell(
-        5,
-        5,
-        Cell(Cell::Terrain::Empty, Cell::Content::None)
-    );
-
-    map_.setCell(
-        7,
-        5,
-        Cell(Cell::Terrain::Wall, Cell::Content::None)
-    );
-
-    map_.setCell(
-        5,
-        6,
-        Cell(Cell::Terrain::Wall, Cell::Content::None)
-    );
-
-    map_.setCell(
-        6,
-        6,
-        Cell(Cell::Terrain::Wall, Cell::Content::None)
-    );
-
-    map_.setCell(
-        7,
-        6,
-        Cell(Cell::Terrain::Wall, Cell::Content::None)
-    );
-
-    map_.setCell(
-        6,
-        5,
-        Cell(
-            Cell::Terrain::Empty,
-            Cell::Content::Flag
-        )
-    );
+    map_.setCell(BASE_1.x, BASE_1.y, CellState::BaseFlag1);
+    map_.setCell(BASE_2.x, BASE_2.y, CellState::BaseFlag2);
 }
 
 void GameEngine::setAgents(

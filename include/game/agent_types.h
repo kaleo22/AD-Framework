@@ -1,9 +1,9 @@
 #pragma once
 
-#include <array>
 #include <cstdint>
 
 #include "game/game_state.h"
+#include "game/packed_cells.h"
 
 
 class GameAgent
@@ -36,18 +36,23 @@ public:
 
     bool isCarryingFlag() const
     {
-        return carryingFlag_;
+        return carriedFlag_ != FlagId::None;
     }
 
-    void setCarryingFlag(bool carryingFlag)
+    FlagId getCarriedFlag() const
     {
-        carryingFlag_ = carryingFlag;
+        return carriedFlag_;
+    }
+
+    void setCarriedFlag(FlagId flag)
+    {
+        carriedFlag_ = flag;
     }
 
 private:
     uint32_t id_ = 0;
     Position position_{0, 0};
-    bool carryingFlag_ = false;
+    FlagId carriedFlag_ = FlagId::None;
 };
 
 
@@ -62,65 +67,27 @@ public:
     static constexpr uint32_t VISIBLE_CELL_COUNT =
         VISION_SIZE * VISION_SIZE;
 
-    static constexpr uint32_t CELLS_PER_WORD = 8;
+    static constexpr uint32_t CENTER_INDEX = VISIBLE_CELL_COUNT / 2;
+    static_assert(VISION_SIZE == VIEW_SIZE, "Internal vision and DLL view must have the same size");
 
-    static constexpr uint32_t WORD_COUNT =
-        (VISIBLE_CELL_COUNT + CELLS_PER_WORD - 1)
-        / CELLS_PER_WORD;
-
-
-    void setVisibleCell(
-        uint32_t index,
-        uint8_t encodedCell)
+    explicit AgentObservation(FlagId ownFlag = FlagId::None)
+        : ownFlag_(ownFlag)
     {
-        if (index >= VISIBLE_CELL_COUNT)
-            return;
-
-        const uint32_t wordIndex =
-            index / CELLS_PER_WORD;
-
-        const uint32_t cellIndex =
-            index % CELLS_PER_WORD;
-
-        const uint32_t shift =
-            cellIndex * 4;
-
-        const uint32_t mask =
-            0x0F << shift;
-
-        vision_[wordIndex] &= ~mask;
-
-        vision_[wordIndex] |=
-            (static_cast<uint32_t>(encodedCell) & 0x0F)
-            << shift;
     }
 
-
-    uint8_t getVisibleCell(
-        uint32_t index) const
+    FlagId getOwnFlag() const
     {
-        if (index >= VISIBLE_CELL_COUNT)
-            return 0;
-
-        const uint32_t wordIndex =
-            index / CELLS_PER_WORD;
-
-        const uint32_t cellIndex =
-            index % CELLS_PER_WORD;
-
-        const uint32_t shift =
-            cellIndex * 4;
-
-        return static_cast<uint8_t>(
-            (vision_[wordIndex] >> shift) & 0x0F
-        );
+        return ownFlag_;
     }
 
-
-    const std::array<uint32_t, WORD_COUNT>&
-    getVision() const
+    void setVisibleCell(uint32_t index, CellState state)
     {
-        return vision_;
+        vision_.set(index, state);
+    }
+
+    CellState getVisibleCell(uint32_t index) const
+    {
+        return vision_.get(index);
     }
 
     void setApiCell(uint32_t index, uint32_t value)
@@ -140,14 +107,14 @@ public:
     }
 
 
-    bool isCarryingFlag() const
+    FlagId getCarriedFlag() const
     {
-        return carryingFlag_;
+        return describeCell(getVisibleCell(CENTER_INDEX)).carriedFlag;
     }
 
-    void setCarryingFlag(bool carryingFlag)
+    bool isCarryingFlag() const
     {
-        carryingFlag_ = carryingFlag;
+        return getCarriedFlag() != FlagId::None;
     }
 
 
@@ -162,9 +129,8 @@ public:
     }
 
 private:
-    std::array<uint32_t, WORD_COUNT> vision_{};
-
-    bool carryingFlag_ = false;
+    PackedCells<VISIBLE_CELL_COUNT> vision_;
+    FlagId ownFlag_;
     uint32_t round_ = 0;
     WorldSnapshot apiSnapshot_{};
 };
