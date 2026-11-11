@@ -3,11 +3,17 @@
 #include <vector>
 #include <cstdint>
 #include "agent/agent_api.h"
+#include "game/cell_state.h"
 
 struct Position
 {
     int x = 0;
     int y = 0;
+
+    constexpr bool operator==(const Position& other) const
+    {
+        return x == other.x && y == other.y;
+    }
 };
 
 enum class AgentAction
@@ -106,6 +112,9 @@ struct GameState
 {
     int width = 16;
     int height = 10;
+
+    FlagId player1CarriedFlag;
+    FlagId player2CarriedFlag;
 
     Position player1{2, 2};
     Position player2{13, 7};
