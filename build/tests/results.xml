@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="3" failures="0" disabled="0" errors="0" time="0.043" timestamp="2026-11-12T23:32:08.852" name="AllTests">
+  <testsuite name="GameEngineTest" tests="3" failures="0" disabled="0" skipped="0" errors="0" time="0.027" timestamp="2026-11-12T23:32:08.862">
+    <testcase name="F017_F018_F019_WallBlocksMoveAndNextObservationReportsFailure" file="C:/Users/leona/projects/AD-Framework/tests/game_engine_test.cpp" line="51" status="run" result="completed" time="0." timestamp="2026-11-12T23:32:08.865" classname="GameEngineTest">
+      <properties>
+        <property name="requirements" value="REQ-F-017, REQ-F-018, REQ-F-019"/>
+      </properties>
+    </testcase>
+    <testcase name="F019_FreeTargetAllowsMoveAndNextObservationReportsSuccess" file="C:/Users/leona/projects/AD-Framework/tests/game_engine_test.cpp" line="86" status="run" result="completed" time="0." timestamp="2026-11-12T23:32:08.876" classname="GameEngineTest">
+      <properties>
+        <property name="requirements" value="REQ-F-019"/>
+      </properties>
+    </testcase>
+    <testcase name="F019_DeliberateWaitIsSuccessfulAndReplacesPreviousFailure" file="C:/Users/leona/projects/AD-Framework/tests/game_engine_test.cpp" line="109" status="run" result="completed" time="0." timestamp="2026-11-12T23:32:08.886" classname="GameEngineTest">
+      <properties>
+        <property name="requirements" value="REQ-F-019"/>
+      </properties>
+    </testcase>
+  </testsuite>
+</testsuites>

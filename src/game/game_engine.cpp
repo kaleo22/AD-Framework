@@ -74,6 +74,16 @@ bool GameEngine::tryMove(GameAgent& agent, Position target)
     if (surface == CellState::Wall || surface == CellState::Unknown || isOccupied(target))
         return false;
 
+    const GameAgent& enemy = agent.getId() == agent1_.getId() ? agent2_ : agent1_;
+    const Position& enemyPosition = enemy.getPosition();
+
+    const bool inDeadZone =
+        target.x >= enemyPosition.x - 1 && target.x <= enemyPosition.x + 1 &&
+        target.y >= enemyPosition.y - 1 && target.y <= enemyPosition.y + 1;
+
+    if (inDeadZone)
+        return false;
+
     agent.setPosition(target);
     syncGameState();
     return true;
@@ -134,6 +144,8 @@ AgentObservation GameEngine::buildObservation(const GameAgent& agent) const
 
     AgentObservation observation(ownFlag);
     observation.setRound(currentRound_);
+    if (agent.getLastActionResult())
+        observation.setLastActionResult(*agent.getLastActionResult());
 
     constexpr int radius = AgentObservation::VISION_RADIUS;
     uint32_t index = 0;
@@ -340,6 +352,7 @@ void GameEngine::updateRunning()
             action1
         );
 
+    agent1_.setLastActionResult({action1, executed1});
     agentController1_->onActionExecuted(executed1);
 
 
@@ -356,6 +369,7 @@ void GameEngine::updateRunning()
             agent2_,
             action2
         );
+    agent2_.setLastActionResult({action2, executed2});
     agentController2_->onActionExecuted(executed2);
 
 

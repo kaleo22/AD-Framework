@@ -9,6 +9,33 @@
 
 This document records weekly development activities, technical decisions, problems, and upcoming tasks.
 
+## Week 46 (09.11. – 13.11.2026)
+
+### Activities
+
+- Fixed the Windows build on 11 November by correcting errors in previously integrated LLM-generated code.
+- Added GoogleTest-based engine tests with scripted agents and a dedicated test script.
+- Passed the first three test cases for REQ-F-017–019: blocked movement with failure feedback, successful movement with success feedback, and deliberate waiting correctly replacing a previous failure.
+- Implemented the missing one-cell protection radius around agents to prevent movement into directly adjacent cells, including diagonals.
+
+### Decisions
+
+- Link automated tests to requirement IDs and use scripted agents for reproducible scenarios.
+- Keep the protection-radius fix pending verification until dedicated tests pass.
+
+### Resolved Issues
+
+- Resolved the failed Windows build carried over from Week 45.
+- Established initial automated verification of movement handling and action feedback in the following round.
+
+### Open Issues / Next Steps
+
+- Test the protection radius, including diagonal adjacency, boundary distances, and movement by both agents.
+- Complete verification of both renderer views and DLL integration under Windows, including flag pickup and placement with two DLL agents.
+- Agree on how to distinguish carried flags from flags on the ground in the DLL snapshot.
+- Extend automated test coverage beyond the first three movement and feedback scenarios.
+
+---
 
 ## Week 45 (02.11. – 06.11.2026)
 

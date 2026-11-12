@@ -32,6 +32,8 @@ public:
 
 private:
 
+    friend class GameEngineTest;
+
     IAgent* agentController1_ = nullptr;
     IAgent* agentController2_ = nullptr;
     bool initialize();

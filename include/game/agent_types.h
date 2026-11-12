@@ -1,9 +1,21 @@
 #pragma once
 
 #include <cstdint>
+#include <optional>
 
 #include "game/game_state.h"
 #include "game/packed_cells.h"
+
+struct AgentActionResult
+{
+    AgentAction requestedAction;
+    AgentAction executedAction;
+
+    bool wasSuccessful() const
+    {
+        return requestedAction == executedAction;
+    }
+};
 
 
 class GameAgent
@@ -34,6 +46,16 @@ public:
         position_ = position;
     }
 
+    const std::optional<AgentActionResult>& getLastActionResult() const
+    {
+        return lastActionResult_;
+    }
+
+    void setLastActionResult(AgentActionResult result)
+    {
+        lastActionResult_ = result;
+    }
+
     bool isCarryingFlag() const
     {
         return carriedFlag_ != FlagId::None;
@@ -53,6 +75,7 @@ private:
     uint32_t id_ = 0;
     Position position_{0, 0};
     FlagId carriedFlag_ = FlagId::None;
+    std::optional<AgentActionResult> lastActionResult_;
 };
 
 
@@ -128,9 +151,20 @@ public:
         round_ = round;
     }
 
+    const std::optional<AgentActionResult>& getLastActionResult() const
+    {
+        return lastActionResult_;
+    }
+
+    void setLastActionResult(AgentActionResult result)
+    {
+        lastActionResult_ = result;
+    }
+
 private:
     PackedCells<VISIBLE_CELL_COUNT> vision_;
     FlagId ownFlag_;
     uint32_t round_ = 0;
     WorldSnapshot apiSnapshot_{};
+    std::optional<AgentActionResult> lastActionResult_;
 };
