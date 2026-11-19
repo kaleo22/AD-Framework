@@ -1,12 +1,26 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuites tests="3" failures="0" disabled="0" errors="0" time="0.051" timestamp="2026-11-19T20:09:47.070" name="AllTests">
-  <testsuite name="GameEngineTest" tests="3" failures="0" disabled="0" skipped="0" errors="0" time="0.045" timestamp="2026-11-19T20:09:47.073">
-    <testcase name="F003_F004_F005AgentLoadingAndUnloadingWhileRuntime" file="C:/Users/leona/projects/AD-Framework/tests/REQ-2-10.cpp" line="57" status="run" result="completed" time="0.018" timestamp="2026-11-19T20:09:47.074" classname="GameEngineTest">
+<testsuites tests="5" failures="1" disabled="0" errors="0" time="0.111" timestamp="2026-11-19T21:43:33.349" name="AllTests">
+  <testsuite name="GameEngineTest" tests="5" failures="1" disabled="0" skipped="0" errors="0" time="0.104" timestamp="2026-11-19T21:43:33.354">
+    <testcase name="F003_F004_F005AgentLoadingAndUnloadingWhileRuntime" file="C:/Users/leona/projects/AD-Framework/tests/REQ-2-10.cpp" line="78" status="run" result="completed" time="0.02" timestamp="2026-11-19T21:43:33.357" classname="GameEngineTest">
       <properties>
         <property name="requirements" value="REQ-F-003, REQ-F004, REQ-F-005"/>
       </properties>
     </testcase>
-    <testcase name="UnloadingSecondAgentWaitsForPlayers" file="C:/Users/leona/projects/AD-Framework/tests/REQ-2-10.cpp" line="85" status="run" result="completed" time="0.01" timestamp="2026-11-19T20:09:47.097" classname="GameEngineTest" />
-    <testcase name="F002" file="C:/Users/leona/projects/AD-Framework/tests/REQ-2-10.cpp" line="94" status="run" result="completed" time="0.007" timestamp="2026-11-19T20:09:47.110" classname="GameEngineTest" />
+    <testcase name="UnloadingSecondAgentWaitsForPlayers" file="C:/Users/leona/projects/AD-Framework/tests/REQ-2-10.cpp" line="105" status="run" result="completed" time="0.012" timestamp="2026-11-19T21:43:33.383" classname="GameEngineTest" />
+    <testcase name="F002" file="C:/Users/leona/projects/AD-Framework/tests/REQ-2-10.cpp" line="114" status="run" result="completed" time="0.01" timestamp="2026-11-19T21:43:33.400" classname="GameEngineTest" />
+    <testcase name="F006_RoundBasedGameLogic" file="C:/Users/leona/projects/AD-Framework/tests/REQ-2-10.cpp" line="120" status="run" result="completed" time="0.02" timestamp="2026-11-19T21:43:33.413" classname="GameEngineTest">
+      <properties>
+        <property name="requirements" value="REQ-F-006"/>
+      </properties>
+    </testcase>
+    <testcase name="F007_BothAgentsSeeTheSameAndActOnIt" file="C:/Users/leona/projects/AD-Framework/tests/REQ-2-10.cpp" line="131" status="run" result="completed" time="0.017" timestamp="2026-11-19T21:43:33.438" classname="GameEngineTest">
+      <failure message="C:/Users/leona/projects/AD-Framework/tests/REQ-2-10.cpp:146&#x0A;Expected equality of these values:&#x0A;  cell&#x0A;    Which is: 1-byte object &lt;00&gt;&#x0A;  CellState::GroundAgent&#x0A;    Which is: 1-byte object &lt;06&gt;&#x0A;" type=""><![CDATA[C:/Users/leona/projects/AD-Framework/tests/REQ-2-10.cpp:146
+Expected equality of these values:
+  cell
+    Which is: 1-byte object <00>
+  CellState::GroundAgent
+    Which is: 1-byte object <06>
+]]></failure>
+    </testcase>
   </testsuite>
 </testsuites>

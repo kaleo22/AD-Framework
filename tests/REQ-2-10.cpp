@@ -7,6 +7,19 @@
 DllAgentAdapter agent1;
 DllAgentAdapter agent2;
 
+class TestAgent : public IAgent
+{
+    public:
+    AgentObservation observation;
+    AgentAction action;
+
+    AgentAction getAction(const AgentObservation& observe) override
+    {
+        observation = observe;
+        return action;
+    }
+};
+
 class GameEngineTest : public ::testing::Test
 {
 protected:
@@ -23,6 +36,14 @@ protected:
     {
         engine.map_.setCell(x, y, cell);
     }
+
+    void setPositions(Position position1, Position position2)
+    {
+        engine.agent1_.setPosition(position1);
+        engine.agent2_.setPosition(position2);
+        engine.syncGameState();
+    }
+
     GameEngine engine;
     int success = !agent1.load(
     "C:/Users/leona/projects/AD-Framework/build/simple_agent.dll",
@@ -95,3 +116,35 @@ TEST_F(GameEngineTest, F002) {
     ASSERT_EQ(MAP.getCell(0, 0), CellState::Wall);
     
 }
+
+TEST_F(GameEngineTest, F006_RoundBasedGameLogic)
+{
+    RecordProperty("requirements", "REQ-F-006");
+    const auto round = engine.getAgent1Observation().getRound();
+
+    engine.update();
+
+    ASSERT_EQ(engine.getAgent1Observation().getRound(), round + 1);
+
+}
+
+TEST_F(GameEngineTest, F007_BothAgentsSeeTheSameAndActOnIt)
+{
+    TestAgent test_a1;
+    TestAgent test_a2;
+    engine.setAgents(&test_a1, &test_a2);
+    setPositions({4,3}, {6,3});
+
+    test_a1.action = AgentAction::MoveLeft;
+    test_a2.action = AgentAction::Wait;
+
+    engine.update();
+
+    const auto index = AgentObservation::CENTER_INDEX - 2;
+    const auto cell = test_a2.observation.getVisibleCell(index);
+
+    ASSERT_EQ(
+        cell, CellState::GroundAgent
+    );
+}
+
