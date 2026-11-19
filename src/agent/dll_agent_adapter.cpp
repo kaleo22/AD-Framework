@@ -1,5 +1,6 @@
 #include "agent/dll_agent_adapter.h"
 #include "game/game_state.h"
+#include "game/game_engine.h"
 
 bool DllAgentAdapter::load(
     const std::string& dllPath,
@@ -11,6 +12,13 @@ bool DllAgentAdapter::load(
         mapWidth,
         mapHeight
     );
+}
+
+bool DllAgentAdapter::unload(GameEngine& engine)
+{
+    engine.removeAgent(this);
+    player_.Unload();
+    return !player_.ready && !player_.library.IsLoaded();
 }
 
 AgentAction DllAgentAdapter::getAction(

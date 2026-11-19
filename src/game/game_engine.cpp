@@ -319,6 +319,30 @@ void GameEngine::setAgents(
     agentController2_ = agent2;
 }
 
+void GameEngine::removeAgent(IAgent* agent)
+{
+    if (agent == nullptr)
+        return;
+
+    bool removed = false;
+    if (agentController1_ == agent)
+    {
+        agentController1_ = nullptr;
+        removed = true;
+    }
+    if (agentController2_ == agent)
+    {
+        agentController2_ = nullptr;
+        removed = true;
+    }
+
+    if (removed && state_ != GameStates::Initializing &&
+        state_ != GameStates::Error && state_ != GameStates::Shutdown)
+    {
+        setState(GameStates::WaitingForPlayers);
+    }
+}
+
 bool GameEngine::initialize()
 {
     initializeTestMap();

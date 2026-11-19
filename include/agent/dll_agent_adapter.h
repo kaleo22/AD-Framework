@@ -4,6 +4,8 @@
 #include <cstdint>
 #include <string>
 
+class GameEngine;
+
 class DllAgentAdapter : public IAgent
 {
     public:
@@ -12,6 +14,8 @@ class DllAgentAdapter : public IAgent
             uint32_t mapWidth,
             uint32_t mapHeight
         );
+
+        bool unload(GameEngine& engine);
     
     AgentAction getAction(
         const AgentObservation& observation

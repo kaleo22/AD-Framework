@@ -18,6 +18,8 @@ public:
         IAgent* agent2
     );
 
+    void removeAgent(IAgent* agent);
+
     GameEngine();
 
     void update();

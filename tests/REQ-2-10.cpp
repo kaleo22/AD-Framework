@@ -2,6 +2,7 @@
 #include "game/game_engine.h"
 #include "agent/dll_agent_adapter.h"
 #include <iostream>
+#include "framework/agent_loader.h"
 
 DllAgentAdapter agent1;
 DllAgentAdapter agent2;
@@ -50,17 +51,47 @@ protected:
                 }
         }
     }
+
 };
 
 TEST_F(GameEngineTest, F003_F004_F005AgentLoadingAndUnloadingWhileRuntime)
 {
     RecordProperty("requirements", "REQ-F-003, REQ-F004, REQ-F-005");
     ASSERT_EQ(suc, 0);
+    ASSERT_TRUE(agent1.unload(engine));
+    ASSERT_EQ(engine.getGameState(), GameStates::WaitingForPlayers);
+
+    engine.update();
+    engine.update();
+    engine.update();
+    ASSERT_EQ(engine.getGameState(), GameStates::WaitingForPlayers);
+
+    ASSERT_TRUE(agent2.unload(engine));
+    ASSERT_EQ(engine.getGameState(), GameStates::WaitingForPlayers);
+
+    ASSERT_TRUE(agent1.load(
+        "C:/Users/leona/projects/AD-Framework/build/simple_agent.dll",
+        Map::width_, Map::height_));
+    ASSERT_TRUE(agent2.load(
+        "C:/Users/leona/projects/AD-Framework/build/simple_agent.dll",
+        Map::width_, Map::height_));
+    engine.setAgents(&agent1, &agent2);
+    engine.update();
+    engine.update();
+    ASSERT_EQ(engine.getGameState(), GameStates::Running);
+}
+
+TEST_F(GameEngineTest, UnloadingSecondAgentWaitsForPlayers)
+{
+    ASSERT_EQ(suc, 0);
+    ASSERT_TRUE(agent2.unload(engine));
+    ASSERT_EQ(engine.getGameState(), GameStates::WaitingForPlayers);
+    engine.update();
+    ASSERT_EQ(engine.getGameState(), GameStates::WaitingForPlayers);
 }
 
 TEST_F(GameEngineTest, F002) {
     Map MAP = engine.getMap();
     ASSERT_EQ(MAP.getCell(0, 0), CellState::Wall);
-    std::cout << "Requirement 2 passed!" << std::endl;
     
 }
