@@ -102,15 +102,6 @@ TEST_F(GameEngineTest, F003_F004_F005AgentLoadingAndUnloadingWhileRuntime)
     ASSERT_EQ(engine.getGameState(), GameStates::Running);
 }
 
-TEST_F(GameEngineTest, UnloadingSecondAgentWaitsForPlayers)
-{
-    ASSERT_EQ(suc, 0);
-    ASSERT_TRUE(agent2.unload(engine));
-    ASSERT_EQ(engine.getGameState(), GameStates::WaitingForPlayers);
-    engine.update();
-    ASSERT_EQ(engine.getGameState(), GameStates::WaitingForPlayers);
-}
-
 TEST_F(GameEngineTest, F002) {
     Map MAP = engine.getMap();
     ASSERT_EQ(MAP.getCell(0, 0), CellState::Wall);

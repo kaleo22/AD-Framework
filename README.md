@@ -9,6 +9,27 @@
 
 This document records weekly development activities, technical decisions, problems, and upcoming tasks.
 
+## Week 47 (16.11. – 20.11.2026)
+
+### Activities
+
+- Added five GoogleTest cases for REQ-F-002 to REQ-F-007. They check a wall cell, two-agent operation, DLL loading and unloading, the round counter, and what each agent sees when choosing a move.
+- Updated the DLL adapter so the engine returns to WaitingForPlayers when either agent is unloaded. Reloading both agents lets the game resume.
+- Four of the five new cases passed.
+- Updated the Gantt-Charts according to the decisions.
+
+### Decisions
+
+- Allow one to two more weeks for core tests. Start the generator on 30 November if the tests pass, or on 7 December if fixes need another week.
+- Generate asymmetric maps and use cost functions to assess fairness from the first version.
+
+### Open Issues / Next Steps
+
+- REQ-F-007 failed. When Agent 1 moves left from (4, 3), Agent 2 already sees that cell as empty. Build both views and collect both actions before applying either move.
+- Test conflicting moves (REQ-F-008), sight boundaries, the protection radius and flag handling with two DLL agents. The representation of carried flags in the DLL snapshot is still open.
+
+---
+
 ## Week 46 (09.11. – 13.11.2026)
 
 ### Activities
@@ -230,18 +251,16 @@ This document records weekly development activities, technical decisions, proble
 
 ## Development Roadmap
 
-| Period | Stage | Main Activities | Target |
-|---|---|---|---|
-| Sep – mid Oct 2026 | **Foundation** | Scope, requirements, architecture, repository setup | Project plan reviewed on **23 Oct** |
-| Mid Oct – mid Nov 2026 | **Cycle 1: Core Framework** | Engine, agent API, integration, smoke tests | Framework prototype by **12 Nov** |
-| Mid Nov – mid Dec 2026 | **Cycle 2: Maze Baseline** | Graph model, baseline generator, test harness, connectivity tests | Reproducible generation of connected maps |
-| Mid Dec 2026 – Jan 2027 | **Cycle 3: Fairness & Evaluation** | Fairness constraints, benchmarks, regression tests, CI | Evaluated fair maze generator |
-| Feb 2027 | **Release & Handover** | Final documentation, release preparation, developer guide | Framework ready for future student cohorts |
+The project estimate is 300 hours.
 
-Each cycle follows:
-**Objectives → Risk Assessment → Implementation & Testing → Review & Replanning**
-
-All dates are provisional. Estimated total project effort: **300 hours**.
+| When | Work | Review outcome or target |
+|---|---|---|
+| September – 23 October | Requirements, architecture and project planning | Project plan and agent interface prepared for the October review |
+| October – 19 November | Framework prototype, DLL integration and first engine tests | Two DLL agents can leave and rejoin. Seven of eight recorded test cases pass. Round ordering is open. |
+| 23–27 November, with 30 November–4 December if needed | Complete the core engine tests and rerun the affected cases | Both agents decide from the same round state. Conflicting actions, sight limits, the protection radius and DLL flag interactions have recorded results. |
+| 7–18 December in the two-week plan | Generate asymmetric candidates, enforce connectivity and score fairness from the first version | Reproducible maps and a fairness score before and after optimisation for each seed |
+| 4–29 January | Integrate generated maps, run benchmarks and regressions, complete the evaluation and developer guide | Evaluated generator by **29 January 2027** with recorded seeds, costs and runtimes |
+| 1 February | Package the framework and hand it over | **1 February 2027** release target |
 
 ## Software Engineering
 
@@ -249,54 +268,57 @@ All dates are provisional. Estimated total project effort: **300 hours**.
 gantt
     title Software Engineering
     dateFormat YYYY-MM-DD
-    axisFormat %d.%m.
+    axisFormat %d %b
+    tickInterval 2week
+    weekday monday
+    todayMarker off
 
-    section Foundation
-    Scope and requirements       :se1, 2026-09-16, 2026-10-16
-    Project plan reviewed        :milestone, m1, 2026-10-23, 0d
+    section Framework
+    Requirements and architecture        :done, se1, 2026-09-16, 30d
+    Engine and agent API                 :done, se2, after se1, 27d
 
-    section Cycle 1
-    Engine and agent API         :se2, 2026-10-16, 2026-11-12
-    Integration & tests          :se3, 2026-11-01, 2026-11-16
-    Framework prototype          :milestone, m2, 2026-11-16, 0d
+    section Tests
+    Engine and DLL tests                 :active, se3, after se2, 18d
+    Retests if needed                    :se4, after se3, 7d
 
-    section Cycle 2
-    Reproducible test harness    :se4, 2026-11-16, 2026-12-16
-    Versioning and documentation :se5, 2026-11-16, 2026-12-16
-
-    section Cycle 3
-    Regression tests and CI      :se6, 2026-12-16, 2027-01-29
-    Developer guide              :se7, 2026-12-27, 2027-01-11
+    section Integration
+    Map input and seed handling          :se5, after se4, 14d
+    Year-end reserve                     :se6, after se5, 14d
+    Map integration and replay           :se7, after se6, 14d
 
     section Release
-    Finalization and handover    :se8, 2027-01-12, 2027-01-29
-    Framework release            :milestone, m4, 2027-02-01, 0d
+    Regression tests and CI              :se8, after se7, 7d
+    Developer guide and handover         :se9, after se8, 7d
+    Framework release                    :milestone, se9m, after se9, 0d
 ```
 
-## Algorithms and Research
+## Algorithms
 
 ```mermaid
 gantt
-    title Fair Maze Generation
+    title Algorithms
     dateFormat YYYY-MM-DD
-    axisFormat %d.%m.
+    axisFormat %d %b
+    tickInterval 2week
+    weekday monday
+    todayMarker off
 
-    section Foundation
-    Research scope               :r1, 2026-10-01, 2026-10-16
+    section Preparation
+    Literature and initial fairness criteria :done, a1, 2026-10-01, 32d
 
-    section Cycle 2
-    Fairness criteria and model  :r2, 2026-11-08, 2026-12-01
-    Baseline maze generator      :r3, 2026-11-23, 2026-12-16
-    Connectivity tests           :r4, 2026-12-01, 2026-12-16
+    section Dependency
+    Framework work and tests             :a2, after a1, 35d
 
-    section Cycle 3
-    Constraint refinement        :r5, 2026-12-16, 2026-12-31
-    Fairness generator           :r6, 2026-12-16, 2027-01-16
-    Benchmarks and evaluation    :r7, 2027-01-01, 2027-01-29
-    Evaluated generator          :milestone, m3, 2027-01-29, 0d
+    section Generator
+    Asymmetric maps and fairness costs   :a3, after a2, 7d
+    Optimise and check connectivity      :a4, after a3, 7d
+    Year-end reserve                     :a5, after a4, 14d
 
-    section Handover
-    Research documentation       :r8, 2027-01-01, 2027-01-29
+    section Evaluation
+    Runs with fixed seeds                :a6, after a5, 7d
+    Benchmark costs and runtime          :a7, after a6, 14d
+    Evaluate results                     :a8, after a7, 4d
+    Evaluation complete                  :milestone, a8m, after a8, 0d
 ```
 
 Structural fairness does not imply identical win rates.
